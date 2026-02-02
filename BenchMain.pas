@@ -1,0 +1,89 @@
+unit BenchMain;
+
+interface
+
+procedure RunFromArgs(const Mode: string);
+
+implementation
+
+uses
+  System.SysUtils,
+  MemStats,
+  MemTouch,
+  StartupIO;
+
+function MB(x: UInt64): Double;
+begin
+  Result := x / 1024 / 1024;
+end;
+
+procedure LogWS(const Tag: string);
+var
+  ws, pf: UInt64;
+begin
+  if GetWSAndPF(ws, pf) then
+    Writeln(Format('%s | WS=%.1fMB | PF=%d', [Tag, MB(ws), pf]))
+  else
+    Writeln(Tag + ' | GetWSAndPF failed');
+end;
+
+procedure RunMem(ReadWrite: Boolean);
+var
+  p: Pointer;
+begin
+  LogWS('before');
+
+  p := Alloc512MB;
+  try
+    // 1周目
+    Touch512MB(p, ReadWrite, 4096);
+    LogWS('after_touch_1');
+
+    // ★ 滞在時間評価（60秒）
+    Sleep(60000);
+    LogWS('after_60s');
+
+    // ★ 再利用評価（2周目）
+    Touch512MB(p, ReadWrite, 4096);
+    LogWS('after_touch_2');
+
+  finally
+    FreeBuf(p);
+  end;
+
+  LogWS('after_free');
+end;
+
+
+
+procedure RunIO;
+begin
+  LogWS('before');
+  RunStartupIO;
+  LogWS('after');
+end;
+
+procedure RunFromArgs(const Mode: string);
+var
+  m: string;
+begin
+  m := LowerCase(Trim(Mode));
+
+  if (m = '') or (m = 'help') then
+  begin
+    Writeln('Usage: ws_probe_delphi.exe mem_ro | mem_rw | io');
+    Exit;
+  end;
+
+  if m = 'mem_ro' then
+    RunMem(False)
+  else if m = 'mem_rw' then
+    RunMem(True)
+  else if m = 'io' then
+    RunIO
+  else
+    Writeln('Unknown mode: ' + Mode);
+end;
+
+end.
+
