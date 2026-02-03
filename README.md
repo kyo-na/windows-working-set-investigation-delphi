@@ -31,4 +31,7 @@ ws\_probe\_delphi.exe mem\_ro
 ws\_probe\_delphi.exe mem\_rw
 
 
+Windows 11 25H2 における Working Set は Memory Compression や Prefetch では決まらない｜キョウスケ
+https://note.com/kyona_blog/n/n8b378a519219
+
 
